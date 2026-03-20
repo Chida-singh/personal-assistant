@@ -1,0 +1,9 @@
+PySide6
+requests
+pandas
+matplotlib
+pyautogui
+pyperclip
+faster-whisper
+sounddevice
+numpy
