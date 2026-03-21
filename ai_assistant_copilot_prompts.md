@@ -30,7 +30,7 @@ assistant/
       settings_tab.py
   core/
     __init__.py
-    llm.py
+    llm.py¦
     router.py
     storage.py
     voice.py

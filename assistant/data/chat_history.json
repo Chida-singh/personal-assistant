@@ -1,1 +1,34 @@
-[]
+[
+  {
+    "role": "user",
+    "content": "explain me about agent"
+  },
+  {
+    "role": "assistant",
+    "content": "explain me about agent"
+  },
+  {
+    "role": "user",
+    "content": "hello"
+  },
+  {
+    "role": "assistant",
+    "content": "Hello! I'm your smart personal assistant, here to help you with various tasks and answer any questions you may have. What's on your mind?"
+  },
+  {
+    "role": "user",
+    "content": "is there any evennt tomo?"
+  },
+  {
+    "role": "assistant",
+    "content": "Let me check! Can you please specify the date (YYYY-MM-DD) or provide more context about what kind of event you're looking for?"
+  },
+  {
+    "role": "user",
+    "content": "in my cakendar"
+  },
+  {
+    "role": "assistant",
+    "content": "Google Calendar is not configured. Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in .env."
+  }
+]
