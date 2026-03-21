@@ -7,17 +7,33 @@
 # ============================================
 
 import sys
+import ctypes
+from pathlib import Path
 
-from PySide6.QtGui import QColor, QPalette
+from PySide6.QtGui import QColor, QFont, QIcon, QPalette
 from PySide6.QtWidgets import QApplication
 
 from gui.main_window import MainWindow
 
 
 if __name__ == "__main__":
+	# On Windows, set an explicit AppUserModelID so taskbar icon mapping is stable.
+	try:
+		ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+			"chida.personalassistant.desktop"
+		)
+	except Exception:
+		pass
+
 	# Create the Qt application instance for the desktop UI.
 	app = QApplication(sys.argv)
 	app.setApplicationName("Local AI Assistant")
+	app.setFont(QFont("Segoe UI", 10))
+
+	# Load and apply the app icon so the logo appears on window chrome and taskbar.
+	icon_path = Path(__file__).resolve().parent.parent / "logo.png"
+	if icon_path.exists():
+		app.setWindowIcon(QIcon(str(icon_path)))
 
 	# Apply a dark palette so base widget colors are consistent app-wide.
 	palette = QPalette()
@@ -34,5 +50,7 @@ if __name__ == "__main__":
 
 	# Build and show the main window, then start the event loop.
 	window = MainWindow()
+	if icon_path.exists():
+		window.setWindowIcon(QIcon(str(icon_path)))
 	window.show()
 	sys.exit(app.exec())

@@ -15,37 +15,34 @@ from googleapiclient.errors import HttpError
 
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
 TOKEN_PATH = Path(__file__).resolve().parent.parent / "token.json"
+IST = timezone(timedelta(hours=5, minutes=30), name="IST")
+IST_TZ_NAME = "Asia/Kolkata"
 
 
 def _get_credentials() -> Optional[Credentials]:
-	# Load environment variables so client ID/secret can come from .env.
 	load_dotenv()
 
-	client_id = os.getenv("GOOGLE_CLIENT_ID") or os.getenv("Google_calendar")
+	client_id = os.getenv("GOOGLE_CLIENT_ID")
 	client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
 	redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost")
 
-	# OAuth desktop flow requires both client ID and client secret.
 	if not client_id or not client_secret:
 		return None
 
 	creds: Optional[Credentials] = None
 
-	# Reuse an existing token when available to avoid logging in every run.
 	if TOKEN_PATH.exists():
 		try:
 			creds = Credentials.from_authorized_user_file(str(TOKEN_PATH), SCOPES)
 		except Exception:
 			creds = None
 
-	# Refresh an expired token if a refresh token exists.
 	if creds and creds.expired and creds.refresh_token:
 		try:
 			creds.refresh(Request())
 		except Exception:
 			creds = None
 
-	# If no valid token exists, run the browser-based OAuth flow.
 	if not creds or not creds.valid:
 		client_config = {
 			"installed": {
@@ -59,13 +56,11 @@ def _get_credentials() -> Optional[Credentials]:
 		flow = InstalledAppFlow.from_client_config(client_config, SCOPES)
 		creds = flow.run_local_server(port=0)
 
-	# Persist token credentials so future calls can run without re-auth.
 	TOKEN_PATH.write_text(creds.to_json(), encoding="utf-8")
 	return creds
 
 
 def _get_service():
-	# Build a Calendar API service object from the active credentials.
 	creds = _get_credentials()
 	if not creds:
 		return None
@@ -73,7 +68,6 @@ def _get_service():
 
 
 def check_events(date: str) -> str:
-	# Read events for the requested date from the primary Google Calendar.
 	service = _get_service()
 	if not service:
 		return "Google Calendar is not configured. Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in .env."
@@ -83,7 +77,7 @@ def check_events(date: str) -> str:
 	except ValueError:
 		return "Invalid date format. Use YYYY-MM-DD."
 
-	start_of_day = dt.combine(target_date, dt.min.time(), tzinfo=timezone.utc)
+	start_of_day = dt.combine(target_date, dt.min.time(), tzinfo=IST)
 	end_of_day = start_of_day + timedelta(days=1)
 
 	try:
@@ -93,17 +87,18 @@ def check_events(date: str) -> str:
 			timeMax=end_of_day.isoformat(),
 			singleEvents=True,
 			orderBy="startTime",
+			timeZone=IST_TZ_NAME,
 		).execute()
 		items = result.get("items", [])
 	except HttpError:
 		return "Could not read calendar events right now."
 
 	if not items:
-		return f"You have no events on {date}."
+		readable_date = target_date.strftime("%A, %B %d").replace(" 0", " ")
+		return f"You have no events on {readable_date}."
 
-	# Build a simple readable list of up to two event summaries with start times.
 	descriptions = []
-	for item in items[:2]:
+	for item in items[:5]:
 		summary = item.get("summary", "Untitled event")
 		start_info = item.get("start", {})
 		start_value = start_info.get("dateTime", start_info.get("date", "all day"))
@@ -111,19 +106,21 @@ def check_events(date: str) -> str:
 		if "T" in start_value:
 			try:
 				parsed = dt.fromisoformat(start_value.replace("Z", "+00:00"))
+				if parsed.tzinfo is not None:
+					parsed = parsed.astimezone(IST)
 				time_label = parsed.strftime("%I:%M %p").lstrip("0").lower()
 			except ValueError:
 				time_label = start_value
-		descriptions.append(f"{summary} at {time_label}")
+		descriptions.append(f"  - {summary} at {time_label}")
 
-	if len(items) == 1:
-		return f"You have 1 event on {date}: {descriptions[0]}."
+	count = len(items)
+	readable_date = target_date.strftime("%A, %B %d").replace(" 0", " ")
+	lines = [f"You have {count} event{'s' if count > 1 else ''} on {readable_date}:"]
+	lines.extend(descriptions)
+	return "\n".join(lines)
 
-	return f"You have {len(items)} events on {date}: {descriptions[0]}, {descriptions[1]}."
 
-
-def create_event(title: str, datetime: str) -> str:
-	# Create a one-hour event in the primary Google Calendar.
+def create_event(title: str, datetime: str, end_datetime: str = "") -> str:
 	service = _get_service()
 	if not service:
 		return "Google Calendar is not configured. Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in .env."
@@ -133,15 +130,28 @@ def create_event(title: str, datetime: str) -> str:
 	except ValueError:
 		return "Invalid datetime format. Use YYYY-MM-DDTHH:MM:SS."
 
-	# Assume UTC if timezone information is not provided by the caller.
 	if start_time.tzinfo is None:
-		start_time = start_time.replace(tzinfo=timezone.utc)
+		# Treat user-provided naive datetime as IST.
+		start_time = start_time.replace(tzinfo=IST)
+	else:
+		start_time = start_time.astimezone(IST)
 
-	end_time = start_time + timedelta(hours=1)
+	if end_datetime:
+		try:
+			end_time = dt.fromisoformat(end_datetime)
+			if end_time.tzinfo is None:
+				end_time = end_time.replace(tzinfo=IST)
+			else:
+				end_time = end_time.astimezone(IST)
+		except ValueError:
+			end_time = start_time + timedelta(hours=1)
+	else:
+		end_time = start_time + timedelta(hours=1)
+
 	event_body = {
 		"summary": title,
-		"start": {"dateTime": start_time.isoformat()},
-		"end": {"dateTime": end_time.isoformat()},
+		"start": {"dateTime": start_time.isoformat(), "timeZone": IST_TZ_NAME},
+		"end": {"dateTime": end_time.isoformat(), "timeZone": IST_TZ_NAME},
 	}
 
 	try:
@@ -149,4 +159,8 @@ def create_event(title: str, datetime: str) -> str:
 	except HttpError:
 		return "Could not create the calendar event right now."
 
-	return f"Event '{title}' added on {datetime}."
+	time_str = start_time.strftime("%I:%M %p").lstrip("0").lower()
+	end_str = end_time.strftime("%I:%M %p").lstrip("0").lower()
+	date_str = start_time.strftime("%A, %B %d").replace(" 0", " ")
+	return f"Event '{title}' scheduled for {date_str} — {time_str} to {end_str}."
+

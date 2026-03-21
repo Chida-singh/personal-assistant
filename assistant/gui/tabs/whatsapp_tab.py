@@ -1,7 +1,7 @@
 """Voice reply tab with local transcription and quick send actions."""
 
 import pyperclip
-from PySide6.QtCore import QThread, Signal
+from PySide6.QtCore import Qt, QThread, Signal
 from PySide6.QtWidgets import (
 	QHBoxLayout,
 	QLabel,
@@ -38,12 +38,12 @@ class VoiceReplyTab(QWidget):
 		# Build the vertical page layout from title to action buttons.
 		main_layout = QVBoxLayout(self)
 		main_layout.setContentsMargins(16, 16, 16, 16)
-		main_layout.setSpacing(12)
+		main_layout.setSpacing(14)
 
 		# Title for the voice reply feature.
 		title = QLabel("🎙️ Voice Reply")
 		title.setStyleSheet(
-			"font-family: 'Segoe UI'; font-size: 18px; font-weight: 700; color: #F1F5F9;"
+			"font-family: 'Segoe UI'; font-size: 20px; font-weight: 700; color: #F1F5F9;"
 		)
 		main_layout.addWidget(title)
 
@@ -51,30 +51,19 @@ class VoiceReplyTab(QWidget):
 		instructions = QLabel(
 			"Press the mic, speak your message, then copy and paste anywhere."
 		)
-		instructions.setStyleSheet("color: #94A3B8; font-size: 12px;")
+		instructions.setStyleSheet(
+			"color: #64748B; font-size: 13px; padding: 0 0 4px 0; background: transparent;"
+		)
 		main_layout.addWidget(instructions)
 
 		# Place a large circular microphone button at the center.
 		mic_row = QHBoxLayout()
 		mic_row.addStretch(1)
 
-		self.mic_button = QPushButton("🎤 Hold to Speak")
-		self.mic_button.setFixedSize(120, 120)
-		self.mic_button.setStyleSheet(
-			"QPushButton {"
-			"background: #2563EB;"
-			"color: #FFFFFF;"
-			"border: none;"
-			"border-radius: 60px;"
-			"font-family: 'Segoe UI';"
-			"font-size: 13px;"
-			"font-weight: 600;"
-			"padding: 8px;"
-			"}"
-			"QPushButton:hover {"
-			"background: #1D4ED8;"
-			"}"
-		)
+		self.mic_button = QPushButton("🎤\nTap to speak")
+		self.mic_button.setFixedSize(130, 130)
+		self.mic_button.setCursor(Qt.CursorShape.PointingHandCursor)
+		self.mic_button.setStyleSheet(self._mic_idle_style())
 		self.mic_button.clicked.connect(self.start_recording)
 		mic_row.addWidget(self.mic_button)
 
@@ -90,9 +79,10 @@ class VoiceReplyTab(QWidget):
 			"background: #1E293B;"
 			"color: #F1F5F9;"
 			"border: 1px solid #334155;"
-			"border-radius: 10px;"
-			"padding: 10px;"
-			"font-size: 13px;"
+			"border-radius: 12px;"
+			"padding: 14px;"
+			"font-size: 14px;"
+			"line-height: 1.6;"
 			"}"
 		)
 		main_layout.addWidget(self.transcription_box, 1)
@@ -101,31 +91,52 @@ class VoiceReplyTab(QWidget):
 		actions_row = QHBoxLayout()
 		actions_row.setSpacing(8)
 
-		self.copy_button = QPushButton("📋 Copy to Clipboard")
+		self.copy_button = QPushButton("📋  Copy")
+		self.copy_button.setCursor(Qt.CursorShape.PointingHandCursor)
 		self.copy_button.clicked.connect(self.copy_text)
 
-		self.auto_type_button = QPushButton("⌨️ Auto-Type")
+		self.auto_type_button = QPushButton("⌨️  Auto-Type")
+		self.auto_type_button.setCursor(Qt.CursorShape.PointingHandCursor)
 		self.auto_type_button.clicked.connect(self.auto_type_text)
 
-		self.clear_button = QPushButton("🗑 Clear")
+		self.clear_button = QPushButton("🗑  Clear")
+		self.clear_button.setCursor(Qt.CursorShape.PointingHandCursor)
 		self.clear_button.clicked.connect(self.clear_text)
 
-		for button in (self.copy_button, self.auto_type_button, self.clear_button):
+		for button in (self.copy_button, self.auto_type_button):
 			button.setStyleSheet(
 				"QPushButton {"
 				"background: #2563EB;"
 				"color: #FFFFFF;"
 				"border: none;"
-				"border-radius: 8px;"
-				"padding: 8px 12px;"
+				"border-radius: 10px;"
+				"padding: 10px 18px;"
 				"font-family: 'Segoe UI';"
-				"font-size: 12px;"
+				"font-size: 13px;"
 				"font-weight: 600;"
 				"}"
 				"QPushButton:hover {"
 				"background: #1D4ED8;"
 				"}"
 			)
+
+		self.clear_button.setStyleSheet(
+			"QPushButton {"
+			"background: transparent;"
+			"color: #94A3B8;"
+			"border: 1px solid #334155;"
+			"border-radius: 10px;"
+			"padding: 10px 18px;"
+			"font-family: 'Segoe UI';"
+			"font-size: 13px;"
+			"font-weight: 600;"
+			"}"
+			"QPushButton:hover {"
+			"background: rgba(239, 68, 68, 0.1);"
+			"color: #EF4444;"
+			"border-color: #EF4444;"
+			"}"
+		)
 
 		actions_row.addWidget(self.copy_button)
 		actions_row.addWidget(self.auto_type_button)
@@ -135,19 +146,8 @@ class VoiceReplyTab(QWidget):
 	def start_recording(self) -> None:
 		# Disable the mic button and show listening state while the worker runs.
 		self.mic_button.setEnabled(False)
-		self.mic_button.setText("🔴 Listening...")
-		self.mic_button.setStyleSheet(
-			"QPushButton {"
-			"background: #DC2626;"
-			"color: #FFFFFF;"
-			"border: none;"
-			"border-radius: 60px;"
-			"font-family: 'Segoe UI';"
-			"font-size: 13px;"
-			"font-weight: 600;"
-			"padding: 8px;"
-			"}"
-		)
+		self.mic_button.setText("🔴\nListening...")
+		self.mic_button.setStyleSheet(self._mic_recording_style())
 
 		self.voice_worker = VoiceWorker()
 		self.voice_worker.result_ready.connect(self.on_transcription_ready)
@@ -161,22 +161,8 @@ class VoiceReplyTab(QWidget):
 	def reset_mic_button(self) -> None:
 		# Restore mic button visuals and enable it for the next recording.
 		self.mic_button.setEnabled(True)
-		self.mic_button.setText("🎤 Hold to Speak")
-		self.mic_button.setStyleSheet(
-			"QPushButton {"
-			"background: #2563EB;"
-			"color: #FFFFFF;"
-			"border: none;"
-			"border-radius: 60px;"
-			"font-family: 'Segoe UI';"
-			"font-size: 13px;"
-			"font-weight: 600;"
-			"padding: 8px;"
-			"}"
-			"QPushButton:hover {"
-			"background: #1D4ED8;"
-			"}"
-		)
+		self.mic_button.setText("🎤\nTap to speak")
+		self.mic_button.setStyleSheet(self._mic_idle_style())
 
 	def copy_text(self) -> None:
 		# Copy the full transcription text to system clipboard.
@@ -191,3 +177,42 @@ class VoiceReplyTab(QWidget):
 	def clear_text(self) -> None:
 		# Clear transcript so the user can start over with a clean box.
 		self.transcription_box.clear()
+
+	@staticmethod
+	def _mic_idle_style() -> str:
+		return (
+			"QPushButton {"
+			"background: qradialgradient("
+			"  cx:0.5, cy:0.5, radius:0.6,"
+			"  fx:0.5, fy:0.4,"
+			"  stop:0 #3B82F6, stop:1 #1D4ED8);"
+			"color: #FFFFFF;"
+			"border: 3px solid rgba(59, 130, 246, 0.3);"
+			"border-radius: 65px;"
+			"font-family: 'Segoe UI';"
+			"font-size: 13px;"
+			"font-weight: 600;"
+			"padding: 8px;"
+			"}"
+			"QPushButton:hover {"
+			"border-color: rgba(59, 130, 246, 0.6);"
+			"}"
+		)
+
+	@staticmethod
+	def _mic_recording_style() -> str:
+		return (
+			"QPushButton {"
+			"background: qradialgradient("
+			"  cx:0.5, cy:0.5, radius:0.6,"
+			"  fx:0.5, fy:0.4,"
+			"  stop:0 #EF4444, stop:1 #B91C1C);"
+			"color: #FFFFFF;"
+			"border: 3px solid rgba(239, 68, 68, 0.4);"
+			"border-radius: 65px;"
+			"font-family: 'Segoe UI';"
+			"font-size: 13px;"
+			"font-weight: 600;"
+			"padding: 8px;"
+			"}"
+		)

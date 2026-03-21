@@ -46,6 +46,7 @@ def route(llm_output: str, file_path: str = None) -> str:
 		return calendar.create_event(
 			str(parameters.get("title", "")),
 			str(parameters.get("datetime", "")),
+			str(parameters.get("end_datetime", "")),
 		)
 
 	# Dispatch finance intent and prefer explicit route argument when provided.

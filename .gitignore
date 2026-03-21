@@ -1,1 +1,43 @@
+# Python caches and bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Environment and secrets
+.env
+.env.*
+
+# Tool caches
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# IDE/editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# App runtime/generated artifacts
+assistant/token.json
+assistant/chat_export.txt
+assistant/chart.png
+assistant/data/*.json
+
+# Local prompt scratch docs
 .ai_assistant_copilot_prompts.md
+ai_assistant_copilot_prompts.md
+local_ai_assistant_prompts.md

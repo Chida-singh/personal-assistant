@@ -24,36 +24,31 @@ class GirlfriendTab(QWidget):
 
 	def __init__(self) -> None:
 		super().__init__()
-		self.setStyleSheet("background: #0F172A;")
+		self.setStyleSheet("background: #111;")
 
-		# Arrange title, input form, ask section, and notes list vertically.
 		main_layout = QVBoxLayout(self)
 		main_layout.setContentsMargins(16, 16, 16, 16)
 		main_layout.setSpacing(12)
 
-		self.title_label = QLabel("💕 About Her")
+		self.title_label = QLabel("About Her")
 		self.title_label.setStyleSheet(
-			"font-family: 'Segoe UI'; font-size: 20px; font-weight: 700; color: #F472B6;"
+			"font-size: 18px; font-weight: 700; color: #ccc;"
 		)
 		main_layout.addWidget(self.title_label)
 
-		# Build note input row: key, value, and save action.
+		# Save note form.
 		form_container = QWidget()
 		form_container.setStyleSheet(
-			"QWidget {"
-			"background: #1E293B;"
-			"border: 1px solid #334155;"
-			"border-radius: 12px;"
-			"}"
+			"QWidget { background: #1a1a1a; border: 1px solid #222; border-radius: 10px; }"
 		)
 		form_inner = QVBoxLayout(form_container)
 		form_inner.setContentsMargins(14, 12, 14, 12)
 		form_inner.setSpacing(8)
 
-		form_title = QLabel("💾 Save a note")
+		form_title = QLabel("SAVE A NOTE")
 		form_title.setStyleSheet(
-			"color: #94A3B8; font-size: 11px; font-weight: 600;"
-			"text-transform: uppercase; letter-spacing: 1px; background: transparent; border: none;"
+			"color: #555; font-size: 10px; font-weight: 700;"
+			"letter-spacing: 1px; background: transparent; border: none;"
 		)
 		form_inner.addWidget(form_title)
 
@@ -70,7 +65,7 @@ class GirlfriendTab(QWidget):
 
 		self.save_button = QPushButton("Save")
 		self.save_button.setCursor(Qt.CursorShape.PointingHandCursor)
-		self.save_button.setStyleSheet(self._accent_button_style())
+		self.save_button.setStyleSheet(self._btn_style())
 		self.save_button.clicked.connect(self.save_note)
 
 		form_row.addWidget(self.key_input, 1)
@@ -79,23 +74,19 @@ class GirlfriendTab(QWidget):
 		form_inner.addLayout(form_row)
 		main_layout.addWidget(form_container)
 
-		# Build ask section with a distinct card appearance.
+		# Ask section.
 		ask_container = QWidget()
 		ask_container.setStyleSheet(
-			"QWidget {"
-			"background: #1E293B;"
-			"border: 1px solid #334155;"
-			"border-radius: 12px;"
-			"}"
+			"QWidget { background: #1a1a1a; border: 1px solid #222; border-radius: 10px; }"
 		)
 		ask_inner = QVBoxLayout(ask_container)
 		ask_inner.setContentsMargins(14, 12, 14, 12)
 		ask_inner.setSpacing(8)
 
-		ask_title = QLabel("💬 Ask about her")
+		ask_title = QLabel("ASK ABOUT HER")
 		ask_title.setStyleSheet(
-			"color: #94A3B8; font-size: 11px; font-weight: 600;"
-			"text-transform: uppercase; letter-spacing: 1px; background: transparent; border: none;"
+			"color: #555; font-size: 10px; font-weight: 700;"
+			"letter-spacing: 1px; background: transparent; border: none;"
 		)
 		ask_inner.addWidget(ask_title)
 
@@ -109,7 +100,7 @@ class GirlfriendTab(QWidget):
 
 		self.ask_button = QPushButton("Ask")
 		self.ask_button.setCursor(Qt.CursorShape.PointingHandCursor)
-		self.ask_button.setStyleSheet(self._accent_button_style())
+		self.ask_button.setStyleSheet(self._btn_style())
 		self.ask_button.clicked.connect(self.ask_question)
 
 		ask_row.addWidget(self.ask_input, 1)
@@ -119,29 +110,25 @@ class GirlfriendTab(QWidget):
 		self.response_label = QLabel("")
 		self.response_label.setWordWrap(True)
 		self.response_label.setStyleSheet(
-			"color: #E2E8F0;"
-			"background: rgba(244, 114, 182, 0.08);"
-			"border: 1px solid rgba(244, 114, 182, 0.2);"
-			"border-radius: 8px;"
-			"padding: 12px;"
-			"font-size: 13px;"
-			"line-height: 1.5;"
+			"color: #ccc; background: #1a1a1a;"
+			"border: 1px solid #2a2a2a; border-radius: 8px;"
+			"padding: 12px; font-size: 13px;"
 		)
 		self.response_label.hide()
 		ask_inner.addWidget(self.response_label)
 
 		main_layout.addWidget(ask_container)
 
-		# Empty state message.
-		self.empty_label = QLabel("💝  No notes yet — save something special above!")
+		# Empty state.
+		self.empty_label = QLabel("No notes yet — save something above")
 		self.empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 		self.empty_label.setStyleSheet(
-			"color: #475569; font-size: 14px; padding: 30px 0; background: transparent;"
+			"color: #444; font-size: 13px; padding: 30px 0; background: transparent;"
 		)
 		self.empty_label.hide()
 		main_layout.addWidget(self.empty_label)
 
-		# Create a scroll area where each saved note appears as a card row.
+		# Notes list.
 		self.scroll_area = QScrollArea()
 		self.scroll_area.setWidgetResizable(True)
 		self.scroll_area.setStyleSheet("QScrollArea { border: none; background: transparent; }")
@@ -155,27 +142,22 @@ class GirlfriendTab(QWidget):
 		self.scroll_area.setWidget(self.notes_container)
 		main_layout.addWidget(self.scroll_area, 1)
 
-		# Load saved notes as soon as the tab opens.
 		self.load_notes()
 
 	def load_notes(self) -> None:
-		# Read all stored notes and rebuild the visible list.
 		self.refresh()
 
 	def save_note(self) -> None:
-		# Save or update a note through the module helper, then reload the list.
 		key = self.key_input.text().strip()
 		value = self.value_input.text().strip()
 		if not key or not value:
 			return
-
 		girlfriend.remember(key, value)
 		self.key_input.clear()
 		self.value_input.clear()
 		self.refresh()
 
 	def delete_note(self, key: str) -> None:
-		# Remove a note by key (case-insensitive) and persist updated storage.
 		notes = load(GIRLFRIEND_FILE)
 		target = key.strip().lower()
 		filtered = [item for item in notes if str(item.get("key", "")).strip().lower() != target]
@@ -183,25 +165,21 @@ class GirlfriendTab(QWidget):
 		self.refresh()
 
 	def ask_question(self) -> None:
-		# Ask LLM using note context and display the routed textual response.
 		question = self.ask_input.text().strip()
 		if not question:
 			return
-
 		notes = girlfriend.get_all()
 		prompt = f"Based on these notes: {json.dumps(notes)}, answer: {question}"
-
 		try:
 			llm_output = llm.send_message(prompt)
 			answer = router.route(llm_output)
 			self.response_label.setText(answer)
 			self.response_label.show()
 		except Exception:
-			self.response_label.setText("I couldn't get an answer right now.")
+			self.response_label.setText("Couldn't get an answer right now.")
 			self.response_label.show()
 
 	def refresh(self) -> None:
-		# Clear current note rows and re-render from latest storage data.
 		while self.notes_layout.count() > 1:
 			item = self.notes_layout.takeAt(0)
 			widget = item.widget()
@@ -209,8 +187,6 @@ class GirlfriendTab(QWidget):
 				widget.deleteLater()
 
 		all_notes = girlfriend.get_all()
-
-		# Toggle empty state.
 		self.empty_label.setVisible(len(all_notes) == 0)
 		self.scroll_area.setVisible(len(all_notes) > 0)
 
@@ -221,10 +197,8 @@ class GirlfriendTab(QWidget):
 			row_widget = QWidget()
 			row_widget.setStyleSheet(
 				"QWidget {"
-				"background: #1E293B;"
-				"border: 1px solid #334155;"
-				"border-left: 3px solid #F472B6;"
-				"border-radius: 8px;"
+				"background: #1a1a1a; border: 1px solid #222;"
+				"border-left: 3px solid #555; border-radius: 8px;"
 				"}"
 			)
 			row_layout = QHBoxLayout(row_widget)
@@ -233,21 +207,27 @@ class GirlfriendTab(QWidget):
 
 			key_label = QLabel(key)
 			key_label.setStyleSheet(
-				"color: #F472B6; font-weight: 700; font-size: 13px;"
+				"color: #aaa; font-weight: 700; font-size: 13px;"
 				"background: transparent; border: none;"
 			)
 
 			value_label = QLabel(value)
 			value_label.setWordWrap(True)
 			value_label.setStyleSheet(
-				"color: #CBD5E1; font-size: 13px; background: transparent; border: none;"
+				"color: #888; font-size: 13px; background: transparent; border: none;"
 			)
 
-			delete_button = QPushButton("✕")
-			delete_button.setFixedSize(28, 28)
+			delete_button = QPushButton("x")
+			delete_button.setFixedSize(24, 24)
 			delete_button.setCursor(Qt.CursorShape.PointingHandCursor)
-			delete_button.setStyleSheet(self._danger_button_style())
-			delete_button.clicked.connect(lambda _=False, note_key=key: self.delete_note(note_key))
+			delete_button.setStyleSheet(
+				"QPushButton {"
+				"background: transparent; color: #444; border: none;"
+				"border-radius: 12px; font-size: 11px; font-weight: 700;"
+				"}"
+				"QPushButton:hover { background: #2a1111; color: #c55; }"
+			)
+			delete_button.clicked.connect(lambda _=False, k=key: self.delete_note(k))
 
 			row_layout.addWidget(key_label)
 			row_layout.addWidget(value_label, 1)
@@ -259,48 +239,18 @@ class GirlfriendTab(QWidget):
 	def _input_style() -> str:
 		return (
 			"QLineEdit {"
-			"background: #0F172A;"
-			"border: 1px solid #334155;"
-			"border-radius: 8px;"
-			"color: #F1F5F9;"
-			"padding: 8px 12px;"
-			"font-size: 13px;"
+			"background: #111; border: 1px solid #2a2a2a; border-radius: 8px;"
+			"color: #ccc; padding: 8px 12px; font-size: 13px;"
 			"}"
-			"QLineEdit:focus {"
-			"border-color: #F472B6;"
-			"}"
+			"QLineEdit:focus { border-color: #444; }"
 		)
 
 	@staticmethod
-	def _accent_button_style() -> str:
+	def _btn_style() -> str:
 		return (
 			"QPushButton {"
-			"background: #F472B6;"
-			"color: #0F172A;"
-			"border-radius: 10px;"
-			"padding: 8px 18px;"
-			"font-weight: 700;"
-			"font-size: 13px;"
-			"border: none;"
+			"background: #333; color: #ccc; border-radius: 8px;"
+			"padding: 8px 18px; font-weight: 600; font-size: 13px; border: none;"
 			"}"
-			"QPushButton:hover {"
-			"background: #EC4899;"
-			"}"
-		)
-
-	@staticmethod
-	def _danger_button_style() -> str:
-		return (
-			"QPushButton {"
-			"background: transparent;"
-			"color: #475569;"
-			"border: none;"
-			"border-radius: 14px;"
-			"font-size: 12px;"
-			"font-weight: 700;"
-			"}"
-			"QPushButton:hover {"
-			"background: rgba(239, 68, 68, 0.15);"
-			"color: #EF4444;"
-			"}"
+			"QPushButton:hover { background: #444; }"
 		)
