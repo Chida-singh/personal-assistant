@@ -32,10 +32,13 @@ htmlcov/
 Thumbs.db
 
 # App runtime/generated artifacts
-assistant/token.json
-assistant/chat_export.txt
-assistant/chart.png
-assistant/data/*.json
+backend/token.json
+backend/chat_export.txt
+backend/chart.png
+backend/data/*
+!backend/data/.gitkeep
+!backend/data/uploads/.gitkeep
+backend/__pycache__/
 
 # Local prompt scratch docs
 .ai_assistant_copilot_prompts.md

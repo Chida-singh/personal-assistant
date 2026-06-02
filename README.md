@@ -1,80 +1,82 @@
 # Personal Assistant
 
 ## What This Is
-This is a local desktop AI assistant built with PySide6, Ollama, and optional Google Calendar integration.
+This is a local AI-powered personal assistant designed to help you manage your finances, calendar, and notes entirely locally. It features a modern **React (Vite)** frontend and a high-performance **FastAPI (Python)** backend, leveraging **Ollama** for entirely private, local LLM processing (such as extracting structured data from unstructured bank PDFs).
+
+## Features
+- **Local LLM Bank Statement Parsing:** Drag and drop PDFs or CSVs of your bank statements. Ollama processes them locally and categorizes every transaction.
+- **Dynamic Dashboards:** Visualize your spending, cash flow, and top merchants automatically.
+- **Calendar & Notes:** Integrated lightweight modules for productivity.
+- **100% Private:** No financial data ever leaves your machine. Your data is stored in local JSON files inside `backend/data/`.
+
+---
 
 ## Prerequisites
-- Windows PowerShell
-- Python 3.10+
-- Ollama installed and available in PATH
+- **Python 3.10+**
+- **Node.js 18+**
+- **Ollama** installed and running on your system.
 
-## Project Paths
-- Workspace root: `D:\Chida\Projects\personal-assistant`
-- App folder: `D:\Chida\Projects\personal-assistant\assistant`
+## Setup Instructions
 
-## Environment Variables
-Create or update `.env` in the workspace root with:
-
-```env
-GOOGLE_API_KEY="your_google_api_key"
-GOOGLE_CLIENT_ID="your_oauth_client_id.apps.googleusercontent.com"
-GOOGLE_CLIENT_SECRET="your_oauth_client_secret"
-GOOGLE_REDIRECT_URI="http://localhost"
-```
-
-Notes:
-- Google Calendar event creation/checking uses OAuth credentials.
-- `GOOGLE_API_KEY` is optional for Calendar API client initialization in this codebase.
-
-## First-Time Setup
-Run these commands in PowerShell.
+### 1. Install & Run the Backend
+The backend handles API requests, database (JSON) interactions, and orchestrates calls to Ollama.
 
 ```powershell
-cd D:\Chida\Projects\personal-assistant
-python -m venv .venv
-.\.venv\Scripts\activate
+# Navigate to the workspace root
+cd backend
 
-cd assistant
+# Create and activate a virtual environment
+python -m venv .venv
+.\.venv\Scripts\activate  # On macOS/Linux use `source .venv/bin/activate`
+
+# Install requirements
 pip install -r requirements.txt
+
+# Run the FastAPI server
+uvicorn main:app --reload --port 8000
+```
+*The backend will be available at `http://localhost:8000`.*
+
+### 2. Setup Ollama
+The backend relies on Ollama to parse financial data. Ensure Ollama is running and you have pulled your preferred model (default is `llama3`, but you can update `.env` to specify `gemma` or others).
+
+```powershell
+# Open a new terminal
+ollama serve
+
+# If you haven't already pulled a model
 ollama pull llama3
 ```
 
-## Run The App (Recommended: 2 Terminals)
-
-### Terminal A (Ollama)
-```powershell
-cd D:\Chida\Projects\personal-assistant
-ollama serve
-```
-
-### Terminal B (Desktop App)
-```powershell
-cd D:\Chida\Projects\personal-assistant\assistant
-..\.venv\Scripts\python.exe main.py
-```
-
-## If You See This Error
-`Error: listen tcp 127.0.0.1:11434: bind ...`
-
-That means Ollama is already running. Do not start `ollama serve` again. Just open a new terminal and launch the app.
-
-You can verify Ollama is alive with:
+### 3. Install & Run the Frontend
+The frontend is a modern React SPA built with Vite.
 
 ```powershell
-ollama list
+# Open a third terminal
+cd frontend
+
+# Install dependencies
+npm install
+
+# Start the dev server
+npm run dev
+```
+*The frontend will be available at `http://localhost:5173`. Open this in your browser to start using the app!*
+
+---
+
+## Configuration & Environment Variables
+Create a `.env` file in the root directory (you can copy `.env.example`). 
+
+```env
+# Google Calendar (Optional)
+GOOGLE_API_KEY="your_google_api_key_here"
+GOOGLE_CLIENT_ID="your_oauth_client_id.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET="your_oauth_client_secret"
+GOOGLE_REDIRECT_URI="http://localhost:5173"
 ```
 
-## Optional: Restart Ollama
-Only do this if Ollama is stuck.
-
-```powershell
-netstat -ano | findstr :11434
-taskkill /PID <PID> /F
-ollama serve
-```
-
-## Quick Start (After Initial Setup)
-```powershell
-cd D:\Chida\Projects\personal-assistant\assistant
-..\.venv\Scripts\python.exe main.py
-```
+## Privacy & Security
+This project is configured to be GitHub-push friendly:
+- The `backend/data/` folder is strictly ignored in `.gitignore`, ensuring your `finance_ledger.json` and any uploaded PDFs are never committed to version control.
+- Ensure you do not commit any `.env` files containing actual secrets.
