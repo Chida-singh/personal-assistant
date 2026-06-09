@@ -1,0 +1,642 @@
+openapi: 3.0.3
+info:
+  title: Personal Assistant API (Gateway contract)
+  version: 1.0.0
+  description: OpenAPI for the existing backend routes in `backend/main.py`.
+servers:
+  - url: http://localhost:8000
+
+paths:
+  /api/chat:
+    post:
+      summary: Chat request (LLM)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatRequest'
+      responses:
+        '200':
+          description: Chat response with routed result and raw intent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+                  raw_intent:
+                    type: string
+
+  /api/chat/stream:
+    post:
+      summary: Chat streaming (SSE)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatRequest'
+      responses:
+        '200':
+          description: Server-sent events stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  /api/finance/upload:
+    post:
+      summary: Upload finance file (PDF/CSV)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                account:
+                  type: string
+      responses:
+        '200':
+          description: Upload result
+
+  /api/finance/accounts:
+    get:
+      summary: Get finance accounts
+      responses:
+        '200':
+          description: Accounts list
+
+  /api/finance/dashboard:
+    get:
+      summary: Finance dashboard data
+      parameters:
+        - in: query
+          name: period
+          schema:
+            type: string
+            default: "month"
+        - in: query
+          name: account
+          schema:
+            type: string
+            default: "All"
+      responses:
+        '200':
+          description: Dashboard payload
+
+  /api/finance/report:
+    get:
+      summary: Generate finance report
+      parameters:
+        - in: query
+          name: account
+          schema:
+            type: string
+          default: "All"
+      responses:
+        '200':
+          description: Report
+
+  /api/finance/transactions:
+    get:
+      summary: Query transactions
+      parameters:
+        - in: query
+          name: category
+          schema:
+            type: string
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: sort_by
+          schema:
+            type: string
+            default: "date_desc"
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 50
+        - in: query
+          name: account
+          schema:
+            type: string
+            default: "All"
+      responses:
+        '200':
+          description: Transaction page
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Transaction'
+
+
+  /api/finance/transactions/manual:
+    post:
+      summary: Add manual transaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ManualTransaction'
+      responses:
+        '200':
+          description: Created transaction
+
+  /api/finance/transactions/{txn_id}:
+    patch:
+      summary: Update transaction category
+      parameters:
+        - in: path
+          name: txn_id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryUpdate'
+      responses:
+        '200':
+          description: Updated
+
+  /api/finance/transactions/{txn_id}/confirm:
+    post:
+      summary: Confirm transaction category
+      parameters:
+        - in: path
+          name: txn_id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfirmUpdate'
+      responses:
+        '200':
+          description: Confirmed
+
+  /api/finance/ambiguous:
+    get:
+      summary: Get ambiguous transactions
+      responses:
+        '200':
+          description: Ambiguous list
+
+  /api/finance/insights:
+    get:
+      summary: AI-generated insights
+      responses:
+        '200':
+          description: Insights
+
+  /api/finance/charts/{name}:
+    get:
+      summary: Get generated chart image
+      parameters:
+        - in: path
+          name: name
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: period
+          schema:
+            type: string
+      responses:
+        '200':
+          description: PNG image
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+
+  /api/finance/clear:
+    delete:
+      summary: Clear all finance data
+      responses:
+        '200':
+          description: Cleared
+
+  /api/todos:
+    get:
+      summary: Get todos
+      responses:
+        '200':
+          description: List of todos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TodoItem'
+    post:
+      summary: Add todo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TodoCreate'
+      responses:
+        '200':
+          description: Added
+
+  /api/todos/complete:
+    put:
+      summary: Complete a todo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TodoUpdate'
+      responses:
+        '200':
+          description: Completed
+
+  /api/todos/{task}:
+    delete:
+      summary: Delete a todo by task text
+      parameters:
+        - in: path
+          name: task
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Deleted
+
+  /api/todos/all:
+    delete:
+      summary: Delete all todos
+      responses:
+        '200':
+          description: All deleted
+
+  /api/todos/done:
+    delete:
+      summary: Delete done todos
+      responses:
+        '200':
+          description: Done deleted
+
+  /api/todos/move:
+    put:
+      summary: Move todo (mark done or change priority)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TodoMove'
+      responses:
+        '200':
+          description: Moved
+
+  /api/notes:
+    get:
+      summary: Get sticky notes
+      responses:
+        '200':
+          description: Notes list
+    post:
+      summary: Add a note
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NoteCreate'
+      responses:
+        '200':
+          description: Added
+
+  /api/notes/recall:
+    post:
+      summary: Recall a note
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NoteRecall'
+      responses:
+        '200':
+          description: Recalled
+
+  /api/notes/{key}:
+    delete:
+      summary: Delete a note by key
+      parameters:
+        - in: path
+          name: key
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Deleted
+
+  /api/vault:
+    get:
+      summary: Get vault entries
+      responses:
+        '200':
+          description: Vault list
+    post:
+      summary: Add or update a vault entry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VaultEntry'
+      responses:
+        '200':
+          description: Added or updated
+
+  /api/vault/{entry_id}:
+    delete:
+      summary: Delete vault entry
+      parameters:
+        - in: path
+          name: entry_id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Deleted
+
+  /api/calendar/check:
+    post:
+      summary: Check calendar for date
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventCheck'
+      responses:
+        '200':
+          description: Message
+
+  /api/calendar/month:
+    get:
+      summary: Get calendar month events
+      parameters:
+        - in: query
+          name: year
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: month
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Events
+
+  /api/calendar/create:
+    post:
+      summary: Create calendar event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventCreate'
+      responses:
+        '200':
+          description: Created
+
+  /api/calendar/update/{event_id}:
+    put:
+      summary: Update calendar event
+      parameters:
+        - in: path
+          name: event_id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventUpdate'
+      responses:
+        '200':
+          description: Updated
+
+  /api/calendar/delete/{event_id}:
+    delete:
+      summary: Delete calendar event
+      parameters:
+        - in: path
+          name: event_id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Deleted
+
+  /api/health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: Service health
+
+components:
+  schemas:
+    ChatRequest:
+      type: object
+      properties:
+        message:
+          type: string
+        history:
+          type: array
+          items:
+            type: object
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: string
+        date:
+          type: string
+          format: date
+        amount:
+          type: number
+        description:
+          type: string
+        debit:
+          type: number
+        credit:
+          type: number
+        category:
+          type: string
+        account:
+          type: string
+
+    ManualTransaction:
+      type: object
+      required: ["date", "description"]
+      properties:
+        date:
+          type: string
+        description:
+          type: string
+        debit:
+          type: number
+          default: 0.0
+        credit:
+          type: number
+          default: 0.0
+        category:
+          type: string
+        account:
+          type: string
+          default: "Main"
+
+    CategoryUpdate:
+      type: object
+      properties:
+        category:
+          type: string
+        note:
+          type: string
+
+    ConfirmUpdate:
+      type: object
+      properties:
+        category:
+          type: string
+        note:
+          type: string
+
+    TodoItem:
+      type: object
+      properties:
+        task:
+          type: string
+        done:
+          type: boolean
+        priority:
+          type: string
+
+    TodoCreate:
+      type: object
+      required: ["task"]
+      properties:
+        task:
+          type: string
+        priority:
+          type: string
+          default: "medium"
+
+    TodoUpdate:
+      type: object
+      required: ["task"]
+      properties:
+        task:
+          type: string
+
+    TodoMove:
+      type: object
+      required: ["task", "target_key"]
+      properties:
+        task:
+          type: string
+        target_key:
+          type: string
+
+    NoteCreate:
+      type: object
+      required: ["key", "value"]
+      properties:
+        key:
+          type: string
+        value:
+          type: string
+
+    NoteRecall:
+      type: object
+      required: ["key"]
+      properties:
+        key:
+          type: string
+
+    EventCreate:
+      type: object
+      required: ["title", "datetime"]
+      properties:
+        title:
+          type: string
+        datetime:
+          type: string
+        end_datetime:
+          type: string
+
+    EventCheck:
+      type: object
+      required: ["date"]
+      properties:
+        date:
+          type: string
+
+    EventUpdate:
+      type: object
+      required: ["title", "start_datetime", "end_datetime"]
+      properties:
+        title:
+          type: string
+        start_datetime:
+          type: string
+        end_datetime:
+          type: string
+
+    VaultEntry:
+      type: object
+      properties:
+        id:
+          type: string
+        service:
+          type: string
+        username:
+          type: string
+        password:
+          type: string
+        url:
+          type: string
+        notes:
+          type: string
+
