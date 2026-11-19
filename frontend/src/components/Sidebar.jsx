@@ -7,12 +7,14 @@ import {
   Calendar,
   Settings,
   Shield,
+  Flame,
 } from "lucide-react";
 
 const NAV_ITEMS = [
   { to: "/", icon: MessageSquare, label: "Chat" },
   { to: "/finance", icon: BarChart3, label: "Finance" },
   { to: "/todos", icon: CheckSquare, label: "Tasks" },
+  { to: "/habits", icon: Flame, label: "Habits" },
   { to: "/notes", icon: StickyNote, label: "Sticky Notes" },
   { to: "/calendar", icon: Calendar, label: "Calendar" },
   { to: "/vault", icon: Shield, label: "Vault" },

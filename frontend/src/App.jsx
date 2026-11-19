@@ -1,4 +1,4 @@
- import React, { Component } from "react";
+import React, { Component } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Sidebar from "./components/Sidebar";
 import ChatPage from "./pages/ChatPage";
@@ -8,6 +8,7 @@ import NotesPage from "./pages/NotesPage";
 import CalendarPage from "./pages/CalendarPage";
 import SettingsPage from "./pages/SettingsPage";
 import VaultPage from "./pages/VaultPage";
+import HabitsPage from "./pages/HabitsPage";
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -48,6 +49,7 @@ export default function App() {
               <Route path="/notes" element={<NotesPage />} />
               <Route path="/calendar" element={<CalendarPage />} />
               <Route path="/vault" element={<VaultPage />} />
+              <Route path="/habits" element={<HabitsPage />} />
               <Route path="/settings" element={<SettingsPage />} />
             </Routes>
           </main>

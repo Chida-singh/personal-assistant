@@ -156,15 +156,15 @@ export default function FinancePage() {
     }
   };
 
-  useEffect(() => { loadAccounts(); }, [loadAccounts]);
-  useEffect(() => { loadDashboard(); }, [loadDashboard]);
-  useEffect(() => { if (tab === "report") loadReport(); }, [tab, loadReport]);
+  useEffect(() => { loadAccounts(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { loadDashboard(); }, [period, activeAccount]);
+  useEffect(() => { if (tab === "report") loadReport(); }, [tab, activeAccount]);
   useEffect(() => { 
     if (tab === "transactions") {
       loadTransactions();
       loadAmbiguous();
     }
-  }, [tab, loadTransactions, loadAmbiguous]);
+  }, [tab, txnPage, txnFilter, txnCategory, txnSort, activeAccount]);
 
   const handleFileSelect = (e) => {
     const file = e.target.files?.[0];

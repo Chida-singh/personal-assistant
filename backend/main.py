@@ -42,6 +42,7 @@ from modules import todo as todo_module
 from modules import girlfriend as notes_module
 from modules import vault as vault_module
 from modules import calendar as calendar_module
+from modules import habits as habits_module
 from core.storage import TODOS_FILE, GIRLFRIEND_FILE, load, save
 
 # ── LLM config ──
@@ -622,6 +623,54 @@ def delete_calendar_event(event_id: str):
 @app.get("/api/health")
 def health():
     return {"status": "ok", "model": LLM_MODEL}
+
+
+# ──────────────────────────────────────────
+# Habits endpoints
+# ──────────────────────────────────────────
+
+class HabitCreate(BaseModel):
+    name: str
+    type: str = "checkbox"
+
+class HabitReorder(BaseModel):
+    ordered_ids: list[str]
+
+class HabitLog(BaseModel):
+    date: str
+    habit_id: str
+    value: object
+
+@app.get("/api/habits")
+def get_habits():
+    return habits_module.get_habits()
+
+@app.post("/api/habits")
+def add_habit(body: HabitCreate):
+    return habits_module.add_habit(body.name, body.type)
+
+@app.delete("/api/habits/{habit_id}")
+def delete_habit(habit_id: str):
+    if not habits_module.delete_habit(habit_id):
+        raise HTTPException(404, "Habit not found")
+    return {"message": "Deleted"}
+
+@app.put("/api/habits/reorder")
+def reorder_habits(body: HabitReorder):
+    return habits_module.reorder_habits(body.ordered_ids)
+
+@app.get("/api/habits/logs")
+def get_month_logs(year: int, month: int):
+    return habits_module.get_month_logs(year, month)
+
+@app.post("/api/habits/logs")
+def set_log(body: HabitLog):
+    return habits_module.set_log(body.date, body.habit_id, body.value)
+
+@app.delete("/api/habits/logs/{date}/{habit_id}")
+def clear_log(date: str, habit_id: str):
+    habits_module.clear_log(date, habit_id)
+    return {"message": "Cleared"}
 
 
 if __name__ == "__main__":
