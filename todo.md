@@ -83,46 +83,48 @@ Your Phone / Laptop / Any device
 ### 1.3 — Migrate Data Storage: JSON → SQLite
 > JSON files are fine for dev. SQLite is safer for production (concurrent writes, no corruption risk).
 
-- [ ] Add `sqlalchemy` + `aiosqlite` to `requirements.txt`
-- [ ] Create `backend/core/database.py` — SQLAlchemy async engine pointing to `data/app.db`
-- [ ] Migrate each module to use SQLite tables instead of JSON files:
-  - `todos.json` → `todos` table
-  - `girlfriend.json` → `notes` table
-  - `finance_ledger.json` → `transactions` table
-  - `vault.json` → `vault` table
-  - `events` (calendar) → `events` table
-- [ ] Write `migrate_json_to_sqlite.py` — one-time script to import existing JSON into SQLite
-- [ ] Keep JSON export working (for backups)
+- [x] Add `sqlalchemy` / `sqlmodel` to `requirements.txt`
+- [x] Create `backend/core/database.py` — SQLite engine pointing to `data/app.db`
+- [x] Migrate each module to use SQLite tables instead of JSON files:
+  - [x] `todos.json` → `todos` table
+  - [x] `girlfriend.json` → `notes` table
+  - [x] `habits.json` → `habits` & `habit_logs` tables
+  - [x] `finance_ledger.json` → `transactions` table
+  - [x] `vault.json` → `vault` table
+  - [x] `events` (calendar) → `events` table
+- [x] Write `migrate_json_to_sqlite.py` — one-time script to import existing JSON into SQLite
+- [x] Keep JSON export working (for backups)
 
 ### 1.4 — Authentication (Only You Can Access It)
-- [ ] Add `python-jose` and `passlib` to `requirements.txt`
-- [ ] Create `backend/core/auth.py` — JWT token generation + verification
-- [ ] Add `POST /api/auth/login` endpoint (username + password → JWT token)
-- [ ] Store your credentials in `.env` (never hardcoded)
-- [ ] Add auth middleware — protect all `/api/*` routes except `/api/health` and `/api/auth/login`
-- [ ] Create `frontend/src/pages/LoginPage.jsx` — simple login form
-- [ ] Store JWT in `localStorage`, attach as `Authorization: Bearer <token>` header on all API calls
-- [ ] Add logout button in `SettingsPage.jsx`
-- [ ] Token expiry: 30 days (refresh on activity)
+- [x] Add `python-jose` and `passlib` to `requirements.txt`
+- [x] Create `backend/core/auth.py` — JWT token generation + verification
+- [x] Add `POST /api/auth/login` endpoint (username + password → JWT token)
+- [x] Store your credentials in `.env` (never hardcoded)
+- [x] Add auth middleware — protect all `/api/*` routes except `/api/health` and `/api/auth/login`
+- [x] Create `frontend/src/pages/LoginPage.jsx` — simple login form
+- [x] Store JWT in `localStorage`, attach as `Authorization: Bearer <token>` header on all API calls
+- [x] Add logout button in `SettingsPage.jsx`
+- [x] Token expiry: 30 days (refresh on activity)
 
 ### 1.5 — Smart AI Fallback (Ollama → Gemini)
 > Ollama won't run on the VM (not enough RAM). Gemini Flash free tier is the AI on production.
 
-- [ ] On startup, check if Ollama is reachable (`GET http://localhost:11434/api/tags`)
-- [ ] If Ollama available → use Ollama (local dev mode)
-- [ ] If Ollama unavailable → switch to **Gemini Flash API** automatically
-- [ ] Wrap both in a single `llm_call(prompt)` function in `backend/core/llm.py`
-- [ ] Update `/api/health` to return `{ llm_source: "ollama" | "gemini" | "offline" }`
-- [ ] Update `SettingsPage.jsx` to show which AI is active
-- [ ] Add `GEMINI_API_KEY` to `.env.example` with setup instructions
+- [x] On startup, check if Ollama is reachable (`GET http://localhost:11434/api/tags`)
+- [x] If Ollama available → use Ollama (local dev mode)
+- [x] If Ollama unavailable → switch to **Gemini Flash API** automatically
+- [x] Wrap both in a single `call_llm(prompt)` function in `backend/core/llm.py`
+- [x] Update `/api/health` to return `{ llm_source: "ollama" | "gemini" | "offline" }`
+- [x] Update `SettingsPage.jsx` to show which AI is active
+- [x] Add `GEMINI_API_KEY` to `.env.example` with setup instructions
 
 ### 1.6 — Deploy Frontend to Vercel
-- [ ] Run `npm run build` in `/frontend` → generates `frontend/dist/`
+- [x] Run `npm run build` in `/frontend` → generates `frontend/dist/`
+- [x] Update `frontend/src/api.js` to use `VITE_API_BASE_URL` env variable
 - [ ] Create a Vercel account, connect GitHub repo
 - [ ] Set build output to `frontend/dist`, root to `frontend/`
 - [ ] Add environment variable in Vercel: `VITE_API_BASE_URL=https://yourdomain.com`
-- [ ] Update `frontend/src/api.js` to use `VITE_API_BASE_URL` env variable
 - [ ] Every `git push` → Vercel auto-redeploys the frontend
+
 
 ---
 
@@ -130,89 +132,94 @@ Your Phone / Laptop / Any device
 
 ### 2.1 — Habit Tracker *(new feature)*
 **Backend:**
-- [ ] Create `backend/modules/habits.py`
-- [ ] Habit model: `{ id, name, description, frequency: daily|weekly, target_days[], created_at }`
-- [ ] Log model: `{ habit_id, date, completed, note }`
-- [ ] API endpoints:
+- [x] Create `backend/routers/habits.py`
+- [x] Habit model: `{ id, name, type, order, created_at }`
+- [x] Log model: `{ habit_id, date, value, created_at }`
+- [x] API endpoints:
   - `GET /api/habits` — list all habits
   - `POST /api/habits` — create habit
-  - `POST /api/habits/{id}/log` — mark done/undone for a date
-  - `GET /api/habits/{id}/streak` — current streak + longest streak
+  - `POST /api/habits/logs` — mark done/undone for a date
   - `GET /api/habits/today` — today's habits + completion %
+  - `GET /api/habits/logs` — monthly habit logs matrix
   - `DELETE /api/habits/{id}`
 
 **Frontend:**
-- [ ] Create `frontend/src/pages/HabitsPage.jsx`
-- [ ] Today's habits as checkboxes — tap to mark done
-- [ ] Streak counter per habit (🔥 7 days)
-- [ ] Weekly heatmap grid (like GitHub contributions)
-- [ ] Add to `App.jsx` routes and `Sidebar.jsx`
-
-**AI:**
-- [ ] Add `track_habit` and `habit_summary` intents to chat assistant
+- [x] Create `frontend/src/pages/HabitsPage.jsx`
+- [x] Today's habits with monthly completion grid and daily score %
+- [x] Add to `App.jsx` routes and `Sidebar.jsx`
 
 ---
 
 ### 2.2 — Dashboard / Home Screen *(new feature)*
 > Replace the AI chat as the default home screen. Chat moves to `/chat`.
 
-- [ ] Create `frontend/src/pages/DashboardPage.jsx`
-- [ ] Make Dashboard the default route `/`, move Chat to `/chat`
-- [ ] Dashboard widgets:
-  - [ ] 🕐 Date + greeting ("Good morning, Chida")
-  - [ ] ✅ Habits due today (quick-check inline)
-  - [ ] 📋 Todos due today + overdue count
-  - [ ] 📅 Next 3 calendar events
-  - [ ] 💰 This month's spend vs last month (single number)
-  - [ ] 📔 Mood streak + "How are you feeling?" prompt
+- [x] Create `frontend/src/pages/DashboardPage.jsx`
+- [x] Make Dashboard the default route `/`, move Chat to `/chat`
+- [x] Dashboard widgets:
+  - [x] 🕐 Date + greeting ("Good morning / evening, Chida")
+  - [x] ✅ Habits due today (quick-check inline)
+  - [x] 📋 Priority Todos due today + overdue alert
+  - [x] 📅 Next 3 upcoming calendar events
+  - [x] 💰 This month's spend, income, and net flow glance
+  - [x] 📔 Daily reflection prompt + mood selector
 
 ---
 
 ### 2.3 — Journal / Daily Log *(new feature)*
 **Backend:**
-- [ ] Create `backend/modules/journal.py`
-- [ ] Entry model: `{ id, date, mood: 1-5, entry: str, tags[], created_at }`
-- [ ] API endpoints:
+- [x] Create `backend/routers/journal.py`
+- [x] Entry model: `{ id, date, mood: 1-5, content: str, tags: str, created_at, updated_at }`
+- [x] API endpoints:
   - `GET /api/journal` — list entries (paginated)
-  - `POST /api/journal` — create/update today's entry
+  - `POST /api/journal` — create/update entry for a date
   - `GET /api/journal/{date}` — entry for a date
-  - `GET /api/journal/stats` — mood trend last 30 days
+  - `GET /api/journal/stats` — mood trend & average mood last 30 days
+  - `DELETE /api/journal/{id}`
 
 **Frontend:**
-- [ ] Create `frontend/src/pages/JournalPage.jsx`
-- [ ] Today's entry textarea (auto-saves on blur)
-- [ ] Mood picker (1–5 emoji scale 😞😕😐🙂😄)
-- [ ] Past entries list with mood colour coding
-- [ ] Mood trend mini line chart (30 days)
+- [x] Create `frontend/src/pages/JournalPage.jsx`
+- [x] Today's entry textarea + auto-loaded per selected date
+- [x] Mood picker (1–5 scale: Rough, Low, Neutral, Good, Great)
+- [x] Past entries list with mood color accent & tags
+- [x] 30-day mood summary statistics
+- [x] Add to `App.jsx` routes and `Sidebar.jsx`
 
 ---
 
 ### 2.4 — Enhanced Todos (Upgrade Existing)
-- [ ] Add `due_date`, `tags[]`, `created_at`, `updated_at` to todo model
-- [ ] `GET /api/todos/due-today` and `GET /api/todos/overdue` endpoints
-- [ ] Tag filtering: `GET /api/todos?tag=work`
-- [ ] `TodoPage.jsx` — show due date badges + red highlight for overdue
-- [ ] Add date picker + tag input to create/edit form
-- [ ] "Due Today" and "Overdue" sections pinned to top of list
+- [x] Add `due_date`, `tags` to todo model
+- [x] `GET /api/todos/due-today` and `GET /api/todos/overdue` endpoints
+- [x] Tag filtering pills in `TodoPage.jsx`
+- [x] `TodoPage.jsx` — show due date badges + red highlight for overdue
+- [x] Add date picker + tag input to create form
 
 ---
 
 ### 2.5 — Calendar Polish (Upgrade Existing)
+- [x] Local calendar fallback (SQLite `Event` table) for when Google OAuth isn't configured
+- [x] Click on day → event detail / create modal with time selectors
 - [ ] Fix Google OAuth for headless server (pre-generate refresh token, store in `.env`)
-- [ ] Add local calendar fallback (`events.json` / SQLite) for when Google isn't configured
 - [ ] Add week view to `CalendarPage.jsx`
-- [ ] Click on day → event detail / create modal
 - [ ] Add recurring events (daily, weekly, monthly)
 
 ---
 
 ### 2.6 — Notes Upgrade (Upgrade Existing)
-- [ ] Rename `girlfriend.py` → `notes.py`, `GIRLFRIEND_FILE` → `NOTES_FILE` (update all imports)
-- [ ] Upgrade from key-value → rich notes: `{ id, title, body, tags[], pinned, created_at, updated_at }`
-- [ ] Add `GET /api/notes/search?q=` for full-text search
-- [ ] `NotesPage.jsx` — grid of note cards (like Apple Notes)
+- [x] Full-text instant search filter in `NotesPage.jsx`
+- [x] Clean card grid with inline double-click editing
 - [ ] Markdown rendering in note body
 - [ ] Pin important notes to top
+
+
+---
+
+---
+
+### 2.7 — Client-Side Caching & Request Optimization *(new)*
+- [x] In-memory API cache with configurable TTL (30s default) for `GET` requests in `frontend/src/api.js`
+- [x] Automatic cache invalidation on mutations (`POST`, `PUT`, `PATCH`, `DELETE`)
+- [x] Debounced search & filter inputs in `FinancePage.jsx` (send requests only after typing finishes)
+- [x] Local client-side filtering for Notes and Tag pills (zero network calls)
 
 ---
 
@@ -263,16 +270,17 @@ Your Phone / Laptop / Any device
 
 | Module | Backend | Frontend | Status |
 |---|---|---|---|
-| Chat / AI | ✅ | ✅ | Working — needs Gemini fallback |
-| Finance | ✅ | ✅ | Working — Ollama-dependent |
-| Todos | ✅ | ✅ | Working — needs due dates/tags |
-| Notes | ✅ | ✅ | Working — needs upgrade |
-| Calendar | ✅ | ✅ | Working — Google OAuth fragile |
-| Vault | ✅ | ✅ | Working — ⚠️ plaintext risk |
-| **Habits** | ❌ | ❌ | Not built yet |
-| **Journal** | ❌ | ❌ | Not built yet |
-| **Dashboard** | ❌ | ❌ | Not built yet |
+| Dashboard | ✅ | ✅ | Working — Home overview with widgets |
+| Chat / AI | ✅ | ✅ | Working — Ollama + Gemini Flash fallback |
+| Journal | ✅ | ✅ | Working — Reflections, mood tracking & stats |
+| Finance | ✅ | ✅ | Working — CSV/PDF parsing & analytics |
+| Todos | ✅ | ✅ | Working — Kanban with due dates & tags |
+| Habits | ✅ | ✅ | Working — Daily checklists & matrix |
+| Notes | ✅ | ✅ | Working — Dark cards with instant search |
+| Calendar | ✅ | ✅ | Working — SQLite fallback + Google OAuth |
+| Vault | ✅ | ✅ | Working — ⚠️ plaintext (Phase 3 encryption next) |
+| Caching | ✅ | ✅ | In-memory TTL cache + debounced inputs |
 
 ---
 
-*Last updated: 2026-11-19*
+*Last updated: 2026-11-24*

@@ -1,0 +1,101 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: personal-assistant-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: personal_assistant
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  gateway:
+    build:
+      context: ./gateway
+    container_name: personal-assistant-gateway
+    ports:
+      - "8000:8000"
+    environment:
+      - JWT_SECRET=super_secret_key
+      - PORT=8000
+      - TODO_SERVICE_URL=http://todo-service:8001
+      - FINANCE_SERVICE_URL=http://finance-service:8002
+      - CALENDAR_SERVICE_URL=http://calendar-service:8003
+      - VAULT_SERVICE_URL=http://vault-service:8004
+      - LLM_WORKER_URL=http://llm-worker:8005
+    depends_on:
+      - todo-service
+      - finance-service
+      - calendar-service
+      - vault-service
+      - llm-worker
+
+  todo-service:
+    build:
+      context: ./services/todo-service
+    container_name: personal-assistant-todo
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/personal_assistant
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  finance-service:
+    build:
+      context: ./services/finance-service
+    container_name: personal-assistant-finance
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/personal_assistant
+      - OLLAMA_URL=http://host.docker.internal:11434/api/chat
+    depends_on:
+      postgres:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  calendar-service:
+    build:
+      context: ./services/calendar-service
+    container_name: personal-assistant-calendar
+    environment:
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
+      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI:-http://localhost}
+    volumes:
+      - ./token.json:/app/token.json
+
+  vault-service:
+    build:
+      context: ./services/vault-service
+    container_name: personal-assistant-vault
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/personal_assistant
+    volumes:
+      - ./vault.json:/app/vault.json
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  llm-worker:
+    build:
+      context: ./services/llm-worker
+    container_name: personal-assistant-llm
+    environment:
+      - OLLAMA_URL=http://host.docker.internal:11434/api/chat
+      - TODO_SERVICE_URL=http://todo-service:8001
+      - CALENDAR_SERVICE_URL=http://calendar-service:8003
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  pgdata:
+ 

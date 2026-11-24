@@ -1,12 +1,37 @@
 import { useState, useRef, useEffect } from "react";
 import { apiPost } from "../api";
-import { Send } from "lucide-react";
+import { Send, Trash2 } from "lucide-react";
+
+const STORAGE_KEY = "chat_history";
+const MAX_STORED = 200;
+
+function loadHistory() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveHistory(messages) {
+  try {
+    const trimmed = messages.slice(-MAX_STORED);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
+  } catch (e) {
+    console.warn("Failed to save chat history:", e);
+  }
+}
 
 export default function ChatPage() {
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState(() => loadHistory());
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const endRef = useRef(null);
+
+  useEffect(() => {
+    saveHistory(messages);
+  }, [messages]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -19,7 +44,7 @@ export default function ChatPage() {
     const text = input.trim();
     if (!text || loading) return;
 
-    const userMsg = { role: "user", content: text };
+    const userMsg = { role: "user", content: text, ts: Date.now() };
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
     setLoading(true);
@@ -31,15 +56,22 @@ export default function ChatPage() {
       });
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: data.response },
+        { role: "assistant", content: data.response, ts: Date.now() },
       ]);
     } catch (err) {
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: `Error: ${err.message}` },
+        { role: "assistant", content: `Error: ${err.message}`, ts: Date.now() },
       ]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const clearHistory = () => {
+    if (window.confirm("Clear all chat history?")) {
+      setMessages([]);
+      localStorage.removeItem(STORAGE_KEY);
     }
   };
 
@@ -54,16 +86,28 @@ export default function ChatPage() {
     <div className="chat-container">
       {messages.length === 0 ? (
         <div className="chat-empty">
-          <img src="/logo.png" alt="Cookie Logo" style={{ width: 64, height: 64, borderRadius: '16px', objectFit: 'cover' }} />
-          <div className="chat-empty-text">
-            Welcome to Cookie.
-          </div>
-          <div style={{ color: "#555", fontSize: 12 }}>
-            Powered by Gemma 4. Ask me anything.
-          </div>
+          <img src="/logo.png" alt="" style={{ width: 56, height: 56, borderRadius: 14, objectFit: "cover" }} />
+          <div className="chat-empty-text">What can I help you with?</div>
+          <div style={{ color: "var(--text-2)", fontSize: 13 }}>Powered by Gemma 4</div>
         </div>
       ) : (
         <div className="chat-messages">
+          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 4 }}>
+            <button
+              onClick={clearHistory}
+              style={{
+                display: "flex", alignItems: "center", gap: 5,
+                padding: "4px 10px", borderRadius: 6,
+                border: "1px solid var(--border)", background: "transparent",
+                color: "var(--text-2)", cursor: "pointer", fontSize: 12,
+              }}
+              title="Clear chat history"
+            >
+              <Trash2 size={12} />
+              Clear
+            </button>
+          </div>
+
           {messages.map((m, i) => (
             <div key={i} className={`chat-bubble ${m.role} fade-in`}>
               {m.content}
@@ -85,7 +129,7 @@ export default function ChatPage() {
       <div className="chat-input-bar">
         <input
           className="input"
-          placeholder="Type a message..."
+          placeholder="Type a message…"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKey}

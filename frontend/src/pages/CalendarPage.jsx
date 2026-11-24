@@ -18,9 +18,7 @@ export default function CalendarPage() {
   const [form, setForm] = useState({ id: "", title: "", date: "", time: "", endTime: "" });
   const [modalOpen, setModalOpen] = useState(false);
 
-  useEffect(() => {
-    loadMonth();
-  }, [year, month]);
+  useEffect(() => { loadMonth(); }, [year, month]);
 
   const loadMonth = async () => {
     try {
@@ -28,32 +26,18 @@ export default function CalendarPage() {
       setEvents(data.events || []);
     } catch (err) {
       setEvents([]);
-      setDayEvents(`Error loading calendar: ${err.message}`);
+      setDayEvents(`Error: ${err.message}`);
     }
   };
 
-  const prev = () => {
-    if (month === 1) { setMonth(12); setYear(year - 1); }
-    else setMonth(month - 1);
-  };
-
-  const next = () => {
-    if (month === 12) { setMonth(1); setYear(year + 1); }
-    else setMonth(month + 1);
-  };
-
-  const goToday = () => {
-    setYear(now.getFullYear());
-    setMonth(now.getMonth() + 1);
-  };
+  const prev = () => { month === 1 ? (setMonth(12), setYear(year - 1)) : setMonth(month - 1); };
+  const next = () => { month === 12 ? (setMonth(1), setYear(year + 1)) : setMonth(month + 1); };
+  const goToday = () => { setYear(now.getFullYear()); setMonth(now.getMonth() + 1); };
 
   const firstDay = (new Date(year, month - 1, 1).getDay() + 6) % 7;
   const daysInMonth = new Date(year, month, 0).getDate();
   const today = new Date();
-  const isToday = (d) =>
-    d === today.getDate() &&
-    month === today.getMonth() + 1 &&
-    year === today.getFullYear();
+  const isToday = (d) => d === today.getDate() && month === today.getMonth() + 1 && year === today.getFullYear();
 
   const eventsOnDay = (d) => {
     const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
@@ -74,11 +58,9 @@ export default function CalendarPage() {
     e.stopPropagation();
     let startDT = evt.start?.dateTime || evt.start?.date || "";
     let endDT = evt.end?.dateTime || evt.end?.date || "";
-    
     let date = startDT.split("T")[0] || startDT;
     let time = startDT.includes("T") ? startDT.split("T")[1].substring(0, 5) : "10:00";
     let endTime = endDT.includes("T") ? endDT.split("T")[1].substring(0, 5) : "11:00";
-
     setForm({ id: evt.id, title: evt.summary || "Untitled", date, time, endTime });
     setModalOpen(true);
   };
@@ -87,7 +69,6 @@ export default function CalendarPage() {
     if (!form.title.trim()) return;
     const startIso = `${form.date}T${form.time}:00`;
     const endIso = `${form.date}T${form.endTime}:00`;
-
     try {
       if (form.id) {
         await apiPut(`/api/calendar/update/${form.id}`, { title: form.title, start_datetime: startIso, end_datetime: endIso });
@@ -96,26 +77,17 @@ export default function CalendarPage() {
       }
       setModalOpen(false);
       loadMonth();
-    } catch (err) {
-      alert("Failed to save event");
-    }
+    } catch { alert("Failed to save event"); }
   };
 
   const deleteEvent = async () => {
     if (!form.id) return;
-    try {
-      await apiDelete(`/api/calendar/delete/${form.id}`);
-      setModalOpen(false);
-      loadMonth();
-    } catch (err) {
-      alert("Failed to delete event");
-    }
+    try { await apiDelete(`/api/calendar/delete/${form.id}`); setModalOpen(false); loadMonth(); }
+    catch { alert("Failed to delete event"); }
   };
 
   const cells = [];
-  for (let i = 0; i < firstDay; i++) {
-    cells.push(<div key={`e-${i}`} className="calendar-day empty" />);
-  }
+  for (let i = 0; i < firstDay; i++) cells.push(<div key={`e-${i}`} className="calendar-day empty" />);
   for (let d = 1; d <= daysInMonth; d++) {
     const dayEvts = eventsOnDay(d);
     cells.push(
@@ -138,59 +110,42 @@ export default function CalendarPage() {
     <div className="page" style={{ display: "flex", flexDirection: "column" }}>
       <div>
         <h1 className="page-title">Calendar</h1>
-        <p className="page-subtitle">Google Calendar integration</p>
+        <p className="page-subtitle">Click a day to add an event</p>
       </div>
 
       <div className="calendar-header">
         <div className="calendar-nav">
-          <button className="calendar-nav-btn" onClick={prev}>
-            <ChevronLeft size={16} />
-          </button>
-          <span className="calendar-month-label">
-            {MONTHS[month - 1]} {year}
-          </span>
-          <button className="calendar-nav-btn" onClick={next}>
-            <ChevronRight size={16} />
-          </button>
-          <button className="btn btn-ghost" style={{ marginLeft: 10, padding: 6 }} onClick={goToday} title="Today">
-            <CalIcon size={14} />
-          </button>
-          <button className="btn btn-ghost" style={{ padding: 6 }} onClick={loadMonth} title="Refresh Events">
-            <RefreshCw size={14} />
-          </button>
+          <button className="calendar-nav-btn" onClick={prev}><ChevronLeft size={16} /></button>
+          <span className="calendar-month-label">{MONTHS[month - 1]} {year}</span>
+          <button className="calendar-nav-btn" onClick={next}><ChevronRight size={16} /></button>
+          <button className="btn btn-ghost" style={{ marginLeft: 8, padding: 6 }} onClick={goToday} title="Today"><CalIcon size={14} /></button>
+          <button className="btn btn-ghost" style={{ padding: 6 }} onClick={loadMonth} title="Refresh"><RefreshCw size={14} /></button>
         </div>
       </div>
 
       <div className="calendar-header-row">
-        {DAYS.map((d) => (
-          <div key={d} className="calendar-day-header">{d}</div>
-        ))}
+        {DAYS.map((d) => <div key={d} className="calendar-day-header">{d}</div>)}
       </div>
-      <div className="calendar-grid">
-        {cells}
-      </div>
+      <div className="calendar-grid">{cells}</div>
 
       {dayEvents && (
-        <div
-          className="card fade-in"
-          style={{ marginTop: 20, whiteSpace: "pre-wrap", flexShrink: 0 }}
-        >
+        <div className="card fade-in" style={{ marginTop: 16, whiteSpace: "pre-wrap", flexShrink: 0 }}>
           {dayEvents}
         </div>
       )}
 
       {modalOpen && (
-        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-          <div className="card fade-in" style={{ width: 400, maxWidth: "90%" }}>
-            <h3 style={{ marginTop: 0, marginBottom: 15 }}>{form.id ? "Edit Event" : "New Event"}</h3>
-            <input className="input" placeholder="Event Title" value={form.title} onChange={e => setForm({...form, title: e.target.value})} style={{ marginBottom: 10 }} />
+        <div className="modal-overlay">
+          <div className="modal-content fade-in">
+            <h3>{form.id ? "Edit Event" : "New Event"}</h3>
+            <input className="input" placeholder="Event title" value={form.title} onChange={e => setForm({...form, title: e.target.value})} style={{ marginBottom: 10 }} />
             <input className="input" type="date" value={form.date} onChange={e => setForm({...form, date: e.target.value})} style={{ marginBottom: 10 }} />
-            <div style={{ display: "flex", gap: 10, marginBottom: 15 }}>
+            <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
               <input className="input" type="time" value={form.time} onChange={e => setForm({...form, time: e.target.value})} />
               <input className="input" type="time" value={form.endTime} onChange={e => setForm({...form, endTime: e.target.value})} />
             </div>
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-              {form.id && <button className="btn btn-ghost" style={{ color: "var(--accent-red)", borderColor: "var(--accent-red)" }} onClick={deleteEvent}>Delete</button>}
+              {form.id && <button className="btn" style={{ background: "rgba(239,68,68,.1)", color: "var(--red)", border: "1px solid rgba(239,68,68,.2)" }} onClick={deleteEvent}>Delete</button>}
               <div style={{ flex: 1 }} />
               <button className="btn btn-ghost" onClick={() => setModalOpen(false)}>Cancel</button>
               <button className="btn btn-primary" onClick={saveEvent}>Save</button>

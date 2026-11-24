@@ -1,67 +1,76 @@
 import { useState, useEffect } from "react";
-import { apiGet } from "../api";
+import { apiGet, clearToken } from "../api";
 
 export default function SettingsPage() {
-  const [health, setHealth] = useState({ status: "checking...", model: "checking..." });
+  const [health, setHealth] = useState({ status: "checking…", llm_source: "checking…", storage: "checking…" });
 
   useEffect(() => {
     async function checkHealth() {
       try {
         const data = await apiGet("/api/health");
         setHealth(data);
-      } catch (err) {
-        setHealth({ status: "offline", model: "unknown" });
+      } catch {
+        setHealth({ status: "offline", llm_source: "offline", storage: "unknown" });
       }
     }
     checkHealth();
   }, []);
 
+  const statusColor = health.status === "ok" ? "var(--green)" : "var(--red)";
+  const llmColor = health.llm_source === "ollama" ? "var(--green)" : health.llm_source === "gemini" ? "var(--accent)" : "var(--red)";
+
   return (
     <div className="page">
       <h1 className="page-title">Settings</h1>
-      <p className="page-subtitle">Configure your assistant</p>
+      <p className="page-subtitle">System status and configuration</p>
 
       <div className="card" style={{ maxWidth: 500, padding: 24 }}>
-        <div style={{ marginBottom: 16 }}>
-          <div
-            style={{
-              color: "#888",
-              fontSize: 11,
-              fontWeight: 600,
-              marginBottom: 6,
-              letterSpacing: 0.5,
-            }}
-          >
-            LLM MODEL
+        {/* AI Source */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ color: "var(--text-2)", fontSize: 11, fontWeight: 600, marginBottom: 6, letterSpacing: ".03em", textTransform: "uppercase" }}>
+            AI Engine
           </div>
-          <div style={{ color: "#fbbf24", fontSize: 15, fontWeight: 600 }}>
-            {health.model}
+          <div style={{ color: llmColor, fontSize: 15, fontWeight: 600, textTransform: "uppercase" }}>
+            {health.llm_source}
           </div>
-          <div style={{ color: "#555", fontSize: 12, marginTop: 2 }}>
-            Running via Ollama at localhost:11434
+          <div style={{ color: "var(--text-2)", fontSize: 12, marginTop: 3 }}>
+            {health.llm_source === "ollama"
+              ? "Running locally via Ollama"
+              : health.llm_source === "gemini"
+              ? "Google Gemini Flash API"
+              : "Offline — start Ollama or set GEMINI_API_KEY"}
           </div>
         </div>
 
-        <div className="sidebar-separator" style={{ margin: "16px 0" }} />
+        <div style={{ height: 1, background: "var(--border)", margin: "0 0 20px" }} />
 
+        {/* Backend */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ color: "var(--text-2)", fontSize: 11, fontWeight: 600, marginBottom: 6, letterSpacing: ".03em", textTransform: "uppercase" }}>
+            Backend
+          </div>
+          <div style={{ color: statusColor, fontSize: 15, fontWeight: 600 }}>
+            FastAPI ({health.status}) · SQLite ({health.storage})
+          </div>
+          <div style={{ color: "var(--text-2)", fontSize: 12, marginTop: 3 }}>
+            Single process · optimized for 1 GB RAM
+          </div>
+        </div>
+
+        <div style={{ height: 1, background: "var(--border)", margin: "0 0 20px" }} />
+
+        {/* Session */}
         <div>
-          <div
-            style={{
-              color: "#888",
-              fontSize: 11,
-              fontWeight: 600,
-              marginBottom: 6,
-              letterSpacing: 0.5,
-            }}
-          >
-            BACKEND
+          <div style={{ color: "var(--text-2)", fontSize: 11, fontWeight: 600, marginBottom: 8, letterSpacing: ".03em", textTransform: "uppercase" }}>
+            Session
           </div>
-          <div style={{ color: health.status === "ok" ? "#34d399" : "#f87171", fontSize: 15, fontWeight: 600 }}>
-            FastAPI ({health.status})
-          </div>
-          <div style={{ color: "#555", fontSize: 12, marginTop: 2 }}>
-            Running at localhost:8000
-          </div>
+          <button onClick={() => clearToken()} className="btn" style={{
+            background: "rgba(239,68,68,.1)",
+            color: "var(--red)",
+            border: "1px solid rgba(239,68,68,.2)",
+          }}>
+            Sign Out
+          </button>
         </div>
       </div>
     </div>

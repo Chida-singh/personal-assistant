@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+pandas
+sqlmodel
+psycopg2-binary
+python-multipart
+matplotlib
+pymupdf
+requests

@@ -1,6 +1,8 @@
-import React, { Component } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import React, { Component, useState, useEffect } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Menu } from "lucide-react";
 import Sidebar from "./components/Sidebar";
+import DashboardPage from "./pages/DashboardPage";
 import ChatPage from "./pages/ChatPage";
 import FinancePage from "./pages/FinancePage";
 import TodoPage from "./pages/TodoPage";
@@ -9,6 +11,9 @@ import CalendarPage from "./pages/CalendarPage";
 import SettingsPage from "./pages/SettingsPage";
 import VaultPage from "./pages/VaultPage";
 import HabitsPage from "./pages/HabitsPage";
+import JournalPage from "./pages/JournalPage";
+import LoginPage from "./pages/LoginPage";
+import { getToken } from "./api";
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -24,10 +29,9 @@ class ErrorBoundary extends Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div style={{ padding: 40, background: "#330000", color: "#ffcccc", minHeight: "100vh" }}>
-          <h2>React App Crashed</h2>
+        <div style={{ padding: 40, background: "#1a0505", color: "#fca5a5", minHeight: "100vh" }}>
+          <h2>Application Error</h2>
           <pre>{this.state.error && this.state.error.toString()}</pre>
-          <pre>{this.state.info && this.state.info.componentStack}</pre>
         </div>
       );
     }
@@ -36,21 +40,67 @@ class ErrorBoundary extends Component {
 }
 
 export default function App() {
+  const [token, setAuthToken] = useState(getToken());
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    function handleLogout() {
+      setAuthToken("");
+    }
+    window.addEventListener("auth:logout", handleLogout);
+    return () => window.removeEventListener("auth:logout", handleLogout);
+  }, []);
+
+  if (!token) {
+    return <LoginPage onLoginSuccess={(tok) => setAuthToken(tok)} />;
+  }
+
   return (
     <ErrorBoundary>
       <BrowserRouter>
         <div className="app-layout">
-          <Sidebar />
+          {/* Mobile Topbar */}
+          <header className="mobile-topbar">
+            <div className="mobile-brand">
+              <img src="/logo.png" alt="" style={{ height: 20, width: 20, borderRadius: 4 }} />
+              <div className="mobile-brand-title">Cookie</div>
+            </div>
+            <button
+              className="mobile-menu-btn"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle navigation menu"
+            >
+              <Menu size={18} />
+            </button>
+          </header>
+
+          {/* Sidebar and Backdrop */}
+          <Sidebar
+            isOpen={mobileMenuOpen}
+            onClose={() => setMobileMenuOpen(false)}
+          />
+          {mobileMenuOpen && (
+            <div
+              className="sidebar-backdrop"
+              onClick={() => setMobileMenuOpen(false)}
+              aria-hidden="true"
+            />
+          )}
+
+          {/* Main Content Area */}
           <main className="main-content">
             <Routes>
-              <Route path="/" element={<ChatPage />} />
+              <Route path="/" element={<DashboardPage />} />
+              <Route path="/chat" element={<ChatPage />} />
+              <Route path="/journal" element={<JournalPage />} />
               <Route path="/finance" element={<FinancePage />} />
               <Route path="/todos" element={<TodoPage />} />
+              <Route path="/habits" element={<HabitsPage />} />
               <Route path="/notes" element={<NotesPage />} />
               <Route path="/calendar" element={<CalendarPage />} />
               <Route path="/vault" element={<VaultPage />} />
-              <Route path="/habits" element={<HabitsPage />} />
               <Route path="/settings" element={<SettingsPage />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </main>
         </div>

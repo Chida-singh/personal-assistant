@@ -44,3 +44,11 @@ backend/__pycache__/
 .ai_assistant_copilot_prompts.md
 ai_assistant_copilot_prompts.md
 local_ai_assistant_prompts.md
+vault.json
+
+# Binaries and large AI models
+*.exe
+*.gguf
+models/
+token.json
+
